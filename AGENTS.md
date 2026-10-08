@@ -1,66 +1,78 @@
 # arith
 
-Public arithmetic service. Read [README.md](README.md) first. It is the contract. When a command in the README does not match the tree, fix the tree or fix the README in the same change. A documented command that does not run is a bug.
+Public arithmetic service. Read [README.md](README.md) first; it is the contract. When a command in the README does not match the tree, fix the tree or fix the README in the same change. A documented command that does not run is a bug.
 
-This repository is the open-source project described in the README. Docs, commits, UI copy, and issues stay on that subject.
+This repository is the open-source project the README describes. Code, docs, commits, UI copy and issues stay on that subject and nothing else.
 
 ## Shape
 
-One Go process, standard library `net/http`, no web framework. Port 8000 is fixed. The page and the API ship in the same image.
+One Rust binary, [axum](https://docs.rs/axum) on tokio, no framework beyond that. Port 8000 is fixed. The page and the API ship in the same image.
 
 ```
-cmd/arith/main.go       listen, routes, static page
-internal/calc/          Sum, Sub, Mul, Div
-internal/calc/calc_test.go
-web/index.html          the page, plus its CSS
-web/app.js              fetches the API and renders the result
-Dockerfile              multi-stage, non-root, port 8000
-deploy/                 namespace, deployment, service, kustomization
-Makefile                test, cover, run, image, deploy, upgrade, remove
+src/calc.rs            the four operations on i64, with their table of cases
+src/api.rs             handlers, query parsing, the {"error": ...} shape
+src/page.rs            web/ compiled into the binary
+src/observe.rs         per-request span, metrics and access log
+src/metrics.rs         Prometheus registry behind /metrics
+src/telemetry.rs       stdout and OTLP exporters for logs and traces
+src/config.rs          environment variables, parsed once
+src/server.rs          listen, graceful shutdown
+src/main.rs            environment in, signals in, exit code out
+web/                   index.html, style.css, app.js; no build step
+tests/                 HTTP contract, tracing behaviour
+Dockerfile             rust:alpine build stage, distroless/static runtime, uid 65532
+deploy/helm/arith      chart: Deployment, Service, optional Ingress, HTTPRoute,
+                       NetworkPolicy, CiliumNetworkPolicy, ServiceMonitor, a helm test
+deploy/kustomize       base (namespace, deployment, service), one component per
+                       optional piece, an example overlay
+.github/workflows      test, lint, coverage, multi-arch image and chart to ghcr
+Makefile               test, cover, lint, run, image, push, deploy, upgrade, remove
 ```
 
-Operations live in `internal/calc`. Adding or changing one is a function and a test row, then the route list. The README's change section points at that file.
-
-Image: `ghcr.io/giovannirco/arith`. Tags are plain (`1`, `2`), set from the Makefile, so a rollout is `--set` or `kubectl set image` with one variable.
+Operations live in `src/calc.rs`. Adding or changing one is a function and a table row there, a route in `src/lib.rs`, a button in `web/index.html`. The README's layout section points at these files; keep it true.
 
 ## API
 
-Match the table in the README, including the error strings for division by zero and a non-integer term. Integers only, int64, division truncates toward zero, overflow is a 400.
+Match the table in the README, including the error strings. Signed 64-bit integers only. Division truncates toward zero. Division by zero, a missing or non-integer term, and a result that does not fit are all `400` with `{"error":"..."}`. Unknown path `404`, wrong method `405`, both JSON. Tests pin every string; change the test and the string together.
 
 `/healthz` is the only health URL. Liveness and readiness both use it.
 
+## Observability
+
+Metrics are pulled from `/metrics` and always on. Traces and logs leave over OTLP only when the standard `OTEL_*` variables ask for it; defaults are stdout logs and no traces. Do not invent `ARITH_*` names for things OpenTelemetry already names. Labels on metrics stay bounded: route template, not path; outcome enum, not error text.
+
 ## Page
 
-One screen. Two inputs, four operations, the result, and the error the API returned. It calls the same endpoints the tests call.
+One screen. Two inputs, four operations, the result, the error text the API returned, and the request line that produced them. It calls the same endpoints the tests do and computes nothing itself.
 
-Keep it quiet: a clear type hierarchy, generous space, one accent, a result that is easy to read from across a desk. No canvas, no dashboard, no traffic generator, no chart. A system font stack is enough. The page has to work at a narrow width and look finished at a laptop width.
-
-The page is not a second product. Cluster access stays a ClusterIP Service. People use port-forward. Do not add an Ingress to the documented install.
+Keep it quiet: system fonts, one accent, generous space, a result readable from across a desk, light and dark. No canvas, no chart, no dashboard, no traffic generator, no framework, no build step. It has to work at phone width and look finished at laptop width.
 
 ## Cluster
 
-Plain YAML and `kubectl apply -k deploy/`. No Helm. No assumption about the CNI, the ingress controller, or a metrics stack. A NetworkPolicy is optional and off in the default install. The deploy must succeed on a vanilla cluster without it.
+Both Helm and Kustomize must produce the same default objects: a Deployment with both probes on `/healthz`, non-root, read-only root filesystem, small requests, one replica, `maxUnavailable: 0`; a ClusterIP Service on 8000. The default install must succeed on a vanilla cluster with no ingress controller, no particular CNI, no operator.
 
-Probes, a non-root user, and a read-only root filesystem belong in the Deployment. Resource requests stay small. One replica is enough.
+Everything else is a toggle that is off by default: Ingress, HTTPRoute, NetworkPolicy, CiliumNetworkPolicy, ServiceMonitor, OTLP export. A toggle in `values.yaml` has a matching component under `deploy/kustomize/components`. When you add a knob to one, add it to the other.
 
-The README, once the manifests exist, has four pasteable sections:
+The README has four pasteable sections, and they are the acceptance test: deploy the public image; request the worked example from a pod in the namespace; change `sum`, build tag `2`, roll it out, request again; delete the namespace. Run them on a clean kind cluster before calling a change done.
 
-1. Deploy the public image.
-2. Request the worked example from a pod inside the namespace.
-3. Change `Sum`, build tag `2`, roll it out, request the endpoint again.
-4. Delete the namespace.
+Image: `ghcr.io/giovannirco/arith`. Tags are plain integers (`1`, `2`), so a rollout is `--set image.tag=2` or `kubectl set image` with one variable. CI publishes a multi-arch image and the chart from a git tag; the Makefile builds the operator's local tag.
 
 ## Tests
 
-`go test -cover ./...` is the coverage report. Cover the worked example, truncation both signs, division by zero, a missing parameter, a non-integer, and an overflow. Skip a coverage target that exists to print a number.
+`make test` is the suite, `make cover` the coverage report. Cover the worked example, truncation in both signs, division by zero, a missing term, a non-integer, a term outside 64 bits, overflow in every operation, the error bodies, the page and its assets, the metrics text, graceful shutdown and the exporter wiring. Keep `cargo clippy --all-targets -- -D warnings` and `cargo fmt --check` clean. Do not add a coverage threshold whose only job is to print a number.
+
+## Versions
+
+Pin what you depend on and look the version up before pinning it: base images by tag and digest, the curl image for tests, crate versions in `Cargo.lock`. Never write a version from memory.
 
 ## Out of scope
 
-A second service. A database. Authentication. Prometheus, Grafana, or tracing. A service mesh. An Ingress on the default path. A UI framework or a frontend build step.
+A second service. A database. Authentication. A service mesh. An Ingress or a LoadBalancer in the default install. A UI framework or a frontend build step. Pushing metrics anywhere.
 
 ## Done
 
-- `make test` and `make cover` pass.
-- `make run`, then the README's example requests return the documented bodies, and `/` renders.
-- `docker build` produces an image that serves on 8000.
-- On a clean kind cluster, following only the README: deploy, request from a pod, change `Sum`, redeploy, request again, delete, namespace gone.
+- `make lint`, `make test` and `make cover` pass.
+- `make run`, then every row of the README's API table returns the documented body, and `/` renders.
+- `make image` produces an image that serves on 8000 as uid 65532 with a read-only root.
+- `helm lint`, `helm template` with every toggle on, and `kubectl kustomize deploy/kustomize/overlays/example` all render and dry-run apply.
+- On a clean kind cluster, following only the README: deploy, request from a pod, change `sum`, redeploy, request again, delete; namespace gone.
