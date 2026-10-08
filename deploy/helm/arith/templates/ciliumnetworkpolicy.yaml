@@ -1,0 +1,76 @@
+{{- if .Values.ciliumNetworkPolicy.enabled }}
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: {{ include "arith.fullname" . }}
+  labels:
+    {{- include "arith.labels" . | nindent 4 }}
+spec:
+  description: >-
+    Ingress on 8000 from the listed namespaces (or every pod) and from the
+    nodes for probes. Egress to DNS and the listed destinations only.
+  endpointSelector:
+    matchLabels:
+      {{- include "arith.selectorLabels" . | nindent 6 }}
+  enableDefaultDeny:
+    ingress: true
+    egress: true
+  ingress:
+    {{- if .Values.ciliumNetworkPolicy.ingressFromNamespaces }}
+    {{- range .Values.ciliumNetworkPolicy.ingressFromNamespaces }}
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: {{ . }}
+      toPorts:
+        - ports:
+            - port: "8000"
+              protocol: TCP
+    {{- end }}
+    {{- else }}
+    - fromEntities:
+        - cluster
+      toPorts:
+        - ports:
+            - port: "8000"
+              protocol: TCP
+    {{- end }}
+    # kubelet's liveness and readiness probes.
+    - fromEntities:
+        - host
+        - remote-node
+      toPorts:
+        - ports:
+            - port: "8000"
+              protocol: TCP
+    {{- with .Values.ciliumNetworkPolicy.extraIngress }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  egress:
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: kube-system
+            k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+            - port: "53"
+              protocol: TCP
+    {{- range .Values.ciliumNetworkPolicy.egress }}
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: {{ .namespace }}
+            {{- range $key, $value := .podSelector }}
+            k8s:{{ $key }}: {{ $value }}
+            {{- end }}
+      toPorts:
+        - ports:
+            {{- range .ports }}
+            - port: {{ . | quote }}
+              protocol: TCP
+            {{- end }}
+    {{- end }}
+    {{- with .Values.ciliumNetworkPolicy.extraEgress }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+{{- end }}

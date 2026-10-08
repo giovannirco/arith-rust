@@ -1,0 +1,35 @@
+# `helm test <release>` runs this pod. It asks the Service for the worked
+# example and fails unless the body is exactly what the README promises.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{ include "arith.fullname" . }}-test
+  labels:
+    {{- include "arith.labels" . | nindent 4 }}
+  annotations:
+    helm.sh/hook: test
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+spec:
+  restartPolicy: Never
+  automountServiceAccountToken: false
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 100
+    runAsGroup: 101
+    seccompProfile:
+      type: RuntimeDefault
+  containers:
+    - name: curl
+      image: {{ .Values.tests.image }}
+      securityContext:
+        allowPrivilegeEscalation: false
+        readOnlyRootFilesystem: true
+        capabilities:
+          drop: ["ALL"]
+      command: ["/bin/sh", "-ec"]
+      args:
+        - |
+          url='http://{{ include "arith.fullname" . }}:{{ .Values.service.port }}/api/sub?term_one=4&term_two=1'
+          body="$(curl -sS --fail-with-body "$url")"
+          echo "GET $url -> $body"
+          test "$body" = '{"result":3}'

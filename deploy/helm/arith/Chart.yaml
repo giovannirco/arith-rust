@@ -1,0 +1,14 @@
+apiVersion: v2
+name: arith
+description: Integer arithmetic over HTTP. Four endpoints, a page, metrics, traces and logs.
+type: application
+# The chart's own version. Bump when a template or default changes.
+version: 1.0.0
+# The image tag installed by default. Override with --set image.tag=<tag>.
+appVersion: "1"
+home: https://github.com/giovannirco/arith
+sources:
+  - https://github.com/giovannirco/arith
+maintainers:
+  - name: Giovanni Coutinho
+    url: https://github.com/giovannirco

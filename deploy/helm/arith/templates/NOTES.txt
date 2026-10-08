@@ -1,0 +1,22 @@
+{{ include "arith.fullname" . }} is rolling out in namespace {{ .Release.Namespace }}, image {{ include "arith.image" . }}.
+
+From another pod in the cluster:
+
+  http://{{ include "arith.fullname" . }}.{{ .Release.Namespace }}.svc:{{ .Values.service.port }}/api/sub?term_one=4&term_two=1
+
+From this machine:
+
+  kubectl -n {{ .Release.Namespace }} port-forward svc/{{ include "arith.fullname" . }} 8000:{{ .Values.service.port }}
+  open http://localhost:8000
+
+Check the worked example from inside the cluster:
+
+  helm test {{ .Release.Name }} -n {{ .Release.Namespace }}
+{{- if .Values.httpRoute.enabled }}
+
+HTTPRoute hostnames: {{ join ", " .Values.httpRoute.hostnames }}
+{{- end }}
+{{- if .Values.ingress.enabled }}
+
+Ingress host: {{ .Values.ingress.host }}
+{{- end }}
