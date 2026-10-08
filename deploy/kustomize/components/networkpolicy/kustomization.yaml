@@ -1,0 +1,6 @@
+# Adds a networking.k8s.io NetworkPolicy: port 8000 reachable from any pod in
+# the cluster, nothing from outside. Only CNIs that enforce policy honour it.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - networkpolicy.yaml

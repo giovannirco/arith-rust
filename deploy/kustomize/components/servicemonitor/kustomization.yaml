@@ -1,0 +1,6 @@
+# Adds a ServiceMonitor for the Prometheus Operator and compatible collectors.
+# Add the label your Prometheus selects on (e.g. release: kube-prometheus-stack).
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - servicemonitor.yaml

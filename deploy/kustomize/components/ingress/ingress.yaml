@@ -1,0 +1,19 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: arith
+  labels:
+    app.kubernetes.io/name: arith
+spec:
+  # ingressClassName: nginx
+  rules:
+    - host: arith.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: arith
+                port:
+                  name: http

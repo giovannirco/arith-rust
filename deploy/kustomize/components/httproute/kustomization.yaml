@@ -1,0 +1,5 @@
+# Adds a Gateway API HTTPRoute. Patch hostnames and parentRefs in your overlay.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - httproute.yaml

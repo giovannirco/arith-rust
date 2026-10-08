@@ -1,0 +1,5 @@
+# Adds an Ingress. Patch the host and className in your overlay.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - ingress.yaml

@@ -1,0 +1,9 @@
+# Turns on OTLP export of traces and logs. Patch the endpoint to your
+# collector, Tempo or Loki.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+patches:
+  - path: env.yaml
+    target:
+      kind: Deployment
+      name: arith

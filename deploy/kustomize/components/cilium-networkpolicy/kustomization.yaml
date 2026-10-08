@@ -1,0 +1,7 @@
+# Adds a CiliumNetworkPolicy: default deny both ways, ingress on 8000 from the
+# cluster and the nodes (probes), egress to kube-dns only. Add the collector
+# your OTLP endpoint points at as an egress rule in your overlay.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - ciliumnetworkpolicy.yaml

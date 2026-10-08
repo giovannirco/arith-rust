@@ -1,0 +1,48 @@
+# Every optional piece at once, with example names. Copy this directory, keep
+# the components you need, and patch the names.
+#   kubectl kustomize deploy/kustomize/overlays/example
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../base
+
+components:
+  - ../../components/otlp
+  - ../../components/httproute
+  - ../../components/ingress
+  - ../../components/networkpolicy
+  - ../../components/cilium-networkpolicy
+  - ../../components/servicemonitor
+
+patches:
+  - target:
+      kind: HTTPRoute
+      name: arith
+    patch: |
+      - op: replace
+        path: /spec/hostnames
+        value: [arith.example.com]
+      - op: replace
+        path: /spec/parentRefs
+        value:
+          - name: gateway
+            namespace: gateway-system
+            sectionName: https
+  - target:
+      kind: Ingress
+      name: arith
+    patch: |
+      - op: add
+        path: /spec/ingressClassName
+        value: nginx
+      - op: replace
+        path: /spec/rules/0/host
+        value: arith.example.com
+  - target:
+      kind: Deployment
+      name: arith
+    patch: |
+      - op: replace
+        path: /spec/template/spec/containers/0/env/5/value
+        value: http://alloy.monitoring.svc:4318

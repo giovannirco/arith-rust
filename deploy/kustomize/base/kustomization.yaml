@@ -1,0 +1,17 @@
+# The same deployment the Helm chart produces by default: a namespace, a
+# Deployment and a ClusterIP Service. Optional pieces live in ../components.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: arith
+
+resources:
+  - namespace.yaml
+  - deployment.yaml
+  - service.yaml
+
+# Change newTag to roll out a build, or run:
+#   kubectl -n arith set image deployment/arith arith=ghcr.io/giovannirco/arith:2
+images:
+  - name: ghcr.io/giovannirco/arith
+    newTag: "1"
