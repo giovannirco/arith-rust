@@ -1,0 +1,4 @@
+# The toolchain every build uses, here and in the Dockerfile.
+[toolchain]
+channel = "1.99"
+components = ["clippy", "rustfmt", "llvm-tools"]

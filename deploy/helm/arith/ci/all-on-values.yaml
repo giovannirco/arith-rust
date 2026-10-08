@@ -1,0 +1,57 @@
+image:
+  tag: "2"
+env:
+  OTEL_TRACES_EXPORTER: otlp
+  OTEL_LOGS_EXPORTER: console,otlp
+  OTEL_EXPORTER_OTLP_ENDPOINT: http://alloy.monitoring.svc:4318
+extraEnv:
+  - name: POD_NAME
+    valueFrom:
+      fieldRef:
+        fieldPath: metadata.name
+podAnnotations:
+  prometheus.io/scrape: "true"
+ingress:
+  enabled: true
+  className: nginx
+  host: arith.example.com
+  tls:
+    - secretName: arith-tls
+      hosts: [arith.example.com]
+httpRoute:
+  enabled: true
+  hostnames: [arith.example.com]
+  parentRefs:
+    - name: gateway
+      namespace: gateway-system
+      sectionName: https
+networkPolicy:
+  enabled: true
+  egress:
+    enabled: true
+    rules:
+      - to:
+          - namespaceSelector:
+              matchLabels:
+                kubernetes.io/metadata.name: monitoring
+        ports:
+          - port: 4318
+            protocol: TCP
+ciliumNetworkPolicy:
+  enabled: true
+  ingressFromNamespaces: [network, monitoring]
+  egress:
+    - namespace: monitoring
+      podSelector:
+        app.kubernetes.io/name: alloy
+      ports: [4317, 4318]
+  extraEgress:
+    - toCIDR: ["10.10.20.34/32"]
+      toPorts:
+        - ports:
+            - port: "4318"
+              protocol: TCP
+serviceMonitor:
+  enabled: true
+  labels:
+    release: kube-prometheus-stack
