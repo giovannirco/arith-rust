@@ -1,8 +1,4 @@
-/arith
-*.exe
-*.test
-*.out
-coverage.html
-bin/
-dist/
+/target
+/coverage
+lcov.info
 .DS_Store

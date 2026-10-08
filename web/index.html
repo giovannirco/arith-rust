@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>arith</title>
+  <link rel="stylesheet" href="/style.css">
+  <link rel="icon" href="data:,">
+</head>
+<body>
+  <main>
+    <header>
+      <h1>arith</h1>
+      <p class="lede">Integer arithmetic over HTTP. Two terms, one operation, one 64-bit result.</p>
+    </header>
+
+    <form id="calc" autocomplete="off" novalidate>
+      <div class="terms">
+        <label>
+          <span>term_one</span>
+          <input id="term_one" name="term_one" type="text" inputmode="numeric" value="7" spellcheck="false">
+        </label>
+        <label>
+          <span>term_two</span>
+          <input id="term_two" name="term_two" type="text" inputmode="numeric" value="2" spellcheck="false">
+        </label>
+      </div>
+      <div class="ops" role="group" aria-label="operation">
+        <button type="button" data-op="sum" aria-pressed="false" aria-label="sum">+</button>
+        <button type="button" data-op="sub" aria-pressed="false" aria-label="subtract">&minus;</button>
+        <button type="button" data-op="mul" aria-pressed="false" aria-label="multiply">&times;</button>
+        <button type="button" data-op="div" aria-pressed="true" aria-label="divide">&divide;</button>
+      </div>
+    </form>
+
+    <section class="answer" aria-live="polite">
+      <output id="result" for="term_one term_two"></output>
+      <p id="error" role="alert" hidden></p>
+    </section>
+
+    <footer>
+      <code id="request"></code>
+      <p>The page calls the same endpoints the tests do. Source: <a href="https://github.com/giovannirco/arith">github.com/giovannirco/arith</a></p>
+    </footer>
+  </main>
+  <script src="/app.js"></script>
+</body>
+</html>
