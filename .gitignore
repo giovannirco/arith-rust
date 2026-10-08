@@ -1,0 +1,8 @@
+/arith
+*.exe
+*.test
+*.out
+coverage.html
+bin/
+dist/
+.DS_Store
