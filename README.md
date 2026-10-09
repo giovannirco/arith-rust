@@ -131,7 +131,12 @@ Any edit works. The one used for the dry run makes `sum` saturate at the 64-bit 
  }
 ```
 
-`make test` now fails on the three overflow expectations for `sum`: two rows in the table in `src/calc.rs` and one case in `tests/api.rs`. That is the suite doing its job. Change them to expect `Ok(i64::MAX)`, `Ok(i64::MIN)` and `200 {"result":9223372036854775807}`, run `make test` again, then build and roll out:
+`make test` now fails on the overflow expectations for `sum`. That is the suite doing its job. Three places disagree with the new behaviour:
+
+- two rows in the table in `src/calc.rs`: change `(Sum, i64::MAX, 1, Err(Overflow))` to `Ok(i64::MAX)` and `(Sum, i64::MIN, -1, Err(Overflow))` to `Ok(i64::MIN)`;
+- one case in `tests/api.rs`, `/api/sum?term_one=9223372036854775807&term_two=1` in `errors_are_400_with_a_reason`: move it into `the_worked_example` and expect `{"result":9223372036854775807}`.
+
+Cargo stops at the first failing test binary, so the first run only shows the `src/calc.rs` rows. Run `make test` again until it passes, then build and roll out:
 
 ```sh
 make test
