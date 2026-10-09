@@ -159,8 +159,9 @@ output {
 #error {
   margin: 0;
   color: var(--error);
-  font-size: 1.05rem;
-  line-height: 1.4;
+  font-size: 1.35rem;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
 }
 
 footer {
