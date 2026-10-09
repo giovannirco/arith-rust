@@ -4,8 +4,12 @@ apiVersion: v1
 kind: Pod
 metadata:
   name: {{ include "arith.fullname" . }}-test
+  # Not the chart's selector labels: the Service and the network policies
+  # select on those, and this pod is a client, not a backend.
   labels:
-    {{- include "arith.labels" . | nindent 4 }}
+    app.kubernetes.io/name: {{ include "arith.name" . }}-test
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
   annotations:
     helm.sh/hook: test
     helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded

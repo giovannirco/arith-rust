@@ -9,10 +9,10 @@ env:
   ARITH_LOG_LEVEL: info
   ARITH_LOG_FORMAT: json
   # Traces and logs go to the cluster's Alloy, which fans out to Tempo and
-  # Loki. Alloy also tails stdout, so console is off here to store each
-  # line once.
+  # Loki. console stays on so `kubectl logs` keeps working; Alloy also tails
+  # stdout, so Loki holds each line twice, under different labels.
   OTEL_TRACES_EXPORTER: otlp
-  OTEL_LOGS_EXPORTER: otlp
+  OTEL_LOGS_EXPORTER: console,otlp
   OTEL_EXPORTER_OTLP_PROTOCOL: http/protobuf
   OTEL_EXPORTER_OTLP_ENDPOINT: http://k8s-monitoring-alloy-receiver.monitoring.svc:4318
 
