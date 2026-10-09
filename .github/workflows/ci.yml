@@ -193,11 +193,14 @@ jobs:
         shell: bash
         run: |
           version="$(yq .version deploy/helm/arith-rust/Chart.yaml)"
-          published="$(oras repo tags "$CHART_REPO")"
-          if grep -qxF "$version" <<< "$published"; then
+          # Ask for this exact version. A chart that was never published, or
+          # a package that does not exist yet, answers "not found" or
+          # "denied"; anything else is an error worth stopping for.
+          if oras manifest fetch "$CHART_REPO:$version" > /dev/null 2> lookup.err; then
             echo "::error file=deploy/helm/arith-rust/Chart.yaml::chart $version is already on GHCR; bump version in Chart.yaml"
             exit 1
           fi
+          grep -qiE 'not found|denied|unknown' lookup.err || { cat lookup.err; exit 1; }
       # Git keeps appVersion "1" so the README walkthrough (build 2, roll it
       # out) shows a rollout. The published chart defaults to the image it
       # ships with, and its Artifact Hub image annotation says the same.
@@ -206,7 +209,7 @@ jobs:
         working-directory: deploy/helm/arith-rust
         run: |
           yq -i ".appVersion = \"$GITHUB_REF_NAME\" |
-                 .annotations[\"artifacthub.io/images\"] |= sub(\"arith:[0-9]+\", \"arith:$GITHUB_REF_NAME\")" Chart.yaml
+                 .annotations[\"artifacthub.io/images\"] |= sub(\"$IMAGE:[0-9]+\", \"$IMAGE:$GITHUB_REF_NAME\")" Chart.yaml
           test "$(yq '.annotations["artifacthub.io/images"] | from_yaml | .[0].image' Chart.yaml)" = "$IMAGE:$GITHUB_REF_NAME"
       - run: helm package deploy/helm/arith-rust --destination /tmp/chart
       - run: echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ghcr.io --username "$GITHUB_ACTOR" --password-stdin
