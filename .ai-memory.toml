@@ -1,0 +1,9 @@
+workspace = "default"
+project = "giovannirco-arith"
+
+# Explicit project so static MCP clients pass this pair.
+# project_strategy is ignored while project is set.
+
+[briefing]
+inject_on_session_start = "true"
+max_chars = 8000
