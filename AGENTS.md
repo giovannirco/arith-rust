@@ -1,12 +1,12 @@
 # arith
 
-Public arithmetic service. Read [README.md](README.md) first; it is the contract. When a command in the README does not match the tree, fix the tree or fix the README in the same change. A documented command that does not run is a bug.
+Read [README.md](README.md) first. That file is the contract. If a command in it does not match the tree, fix the tree or the README in the same change. A documented command that does not run is a bug.
 
-This repository is the open-source project the README describes. Code, docs, commits, UI copy and issues stay on that subject and nothing else.
+This repository is the open-source arithmetic service the README describes. Code, docs, commits, UI copy and issues stay on that subject.
 
 ## Shape
 
-One Rust binary, [axum](https://docs.rs/axum) on tokio, no framework beyond that. Port 8000 is fixed. The page and the API ship in the same image.
+One Rust binary, [axum](https://docs.rs/axum) on tokio, nothing else on top. Port 8000 is fixed. The page and the API ship in the same image.
 
 ```
 src/calc.rs            the four operations on i64, with their table of cases
@@ -29,7 +29,7 @@ deploy/kustomize       base (namespace, deployment, service), one component per
 Makefile               test, cover, lint, run, image, push, deploy, upgrade, remove
 ```
 
-Operations live in `src/calc.rs`. Adding or changing one is a function and a table row there, a route in `src/lib.rs`, a button in `web/index.html`. The README's layout section points at these files; keep it true.
+Operations live in `src/calc.rs`. Adding or changing one is a function and a table row there, a route in `src/lib.rs`, a button in `web/index.html`. The README's layout section points at these files. Keep that true.
 
 ## API
 
@@ -39,7 +39,7 @@ Match the table in the README, including the error strings. Signed 64-bit intege
 
 ## Observability
 
-Metrics are pulled from `/metrics` and always on. Traces and logs leave over OTLP only when the standard `OTEL_*` variables ask for it; defaults are stdout logs and no traces. Do not invent `ARITH_*` names for things OpenTelemetry already names. Labels on metrics stay bounded: route template, not path; outcome enum, not error text.
+Metrics are pulled from `/metrics` and always on. Traces and logs leave over OTLP only when the standard `OTEL_*` variables ask for it. Defaults are stdout logs and no traces. Do not invent `ARITH_*` names for things OpenTelemetry already names. Labels on metrics stay bounded: route template, not path; outcome enum, not error text.
 
 ## Page
 
@@ -55,7 +55,7 @@ Everything else is a toggle that is off by default: Ingress, HTTPRoute, NetworkP
 
 The README has four pasteable sections, and they are the acceptance test: deploy the public image; request the worked example from a pod in the namespace; change `sum`, build tag `2`, roll it out, request again; delete the namespace. Run them on a clean kind cluster before calling a change done.
 
-Image: `ghcr.io/giovannirco/arith`. Tags are plain integers (`1`, `2`), so a rollout is `--set image.tag=2` or `kubectl set image` with one variable. CI publishes a multi-arch image and the chart from a git tag; the Makefile builds the operator's local tag.
+Image: `ghcr.io/giovannirco/arith`. Tags are plain integers (`1`, `2`), so a rollout is `--set image.tag=2` or `kubectl set image` with one variable. CI publishes a multi-arch image and the chart from a git tag. The Makefile builds the operator's local tag.
 
 ## Tests
 

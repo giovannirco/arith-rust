@@ -1,8 +1,10 @@
 # arith
 
-arith adds, subtracts, multiplies and divides 64-bit integers over HTTP, and serves a page that does the same four things through the API. It exposes Prometheus metrics and can send traces and logs over OTLP. One Rust binary on port 8000, a 4 MB image, deployable with Helm or with Kustomize. The default install needs nothing from the cluster but a place to run a pod.
+arith does integer arithmetic over HTTP. Four endpoints, a page that calls them, Prometheus on `/metrics`. One Rust process on port 8000. Traces and logs go over OTLP if you set the usual `OTEL_*` variables; otherwise they stay on stdout.
 
-**Status:** this commit restates the contract. The service, the image, the chart and the manifests land in the commits that follow; until then the commands below are the interface they have to meet.
+Helm and Kustomize both install a Deployment and a ClusterIP Service. The default install works on a cluster that has nothing else: no ingress controller, no special CNI, no operator.
+
+I run one at <https://arith.giovanni.dev.br>. The values for that cluster are in `deploy/examples/arith.giovanni.dev.br.yaml`.
 
 ## API
 
@@ -22,18 +24,18 @@ arith adds, subtracts, multiplies and divides 64-bit integers over HTTP, and ser
 
 ### Decisions
 
-- Terms and results are signed 64-bit integers. `1.5` is rejected, not rounded. A term that is an integer but too large for 64 bits gets its own message: `term_one does not fit in a 64-bit integer, got "..."`.
+- Terms and results are signed 64-bit integers. `1.5` is rejected, not rounded. A term that looks like an integer but does not fit gets its own message: `term_one does not fit in a 64-bit integer, got "..."`.
 - Division truncates toward zero: `7/2 = 3`, `-7/2 = -3`. Dividing by zero is a `400`.
 - A result outside the 64-bit range is a `400`, not a wrapped number.
-- Every error is JSON, `{"error":"..."}`, and the text says what was wrong with which parameter. An unknown path is `404 {"error":"not found"}`; a method other than GET is `405 {"error":"method not allowed"}`.
-- In a query string `+` means a space, so `term_two=+2` is rejected. Send `%2B2`, or just `2`.
+- Every error is JSON, `{"error":"..."}`, and the text says what was wrong with which parameter. An unknown path is `404 {"error":"not found"}`. A method other than GET is `405 {"error":"method not allowed"}`.
+- In a query string `+` is a space, so `term_two=+2` is rejected. Send `%2B2`, or just `2`.
 - `/healthz` is the only health URL. Liveness and readiness both use it.
 
 ## The page
 
-`GET /` is one screen served by the same process: two fields, four operations, the result, and the error text when the API refuses a call. No frontend build, no second container. The page asks the API for every result; it computes nothing itself.
+`GET /` is one screen from the same process: two fields, four operations, the result, and the error text when the API refuses a call. No frontend build, no second container. The page asks the API for every result. It does not compute anything itself.
 
-Locally it is <http://localhost:8000>. In a cluster the Service is ClusterIP, so a person opens it with `kubectl port-forward`; other workloads call the Service directly.
+Locally that is <http://localhost:8000>. In a cluster the Service is ClusterIP, so a person opens it with `kubectl port-forward`. Other workloads call the Service directly.
 
 ## Run it here
 
@@ -75,7 +77,7 @@ Two shapes that work:
 OTEL_TRACES_EXPORTER=otlp OTEL_LOGS_EXPORTER=console,otlp \
 OTEL_EXPORTER_OTLP_ENDPOINT=http://alloy.monitoring.svc:4318 ./arith
 
-# Straight to the stores. Tempo takes OTLP on 4318; Loki takes OTLP logs on /otlp.
+# Straight to the stores. Tempo takes OTLP on 4318. Loki takes OTLP logs on /otlp.
 OTEL_TRACES_EXPORTER=otlp OTEL_LOGS_EXPORTER=otlp \
 OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://tempo:4318/v1/traces \
 OTEL_EXPORTER_OTLP_LOGS_ENDPOINT=http://loki:3100/otlp/v1/logs ./arith
@@ -87,7 +89,7 @@ If an agent already tails pod stdout into Loki, pick one of `console` and `otlp`
 
 ## Deploy
 
-You need `kubectl` pointed at a cluster, and `helm` 3.8 or newer for the Helm path. The default install is a Deployment and a ClusterIP Service in namespace `arith`; it assumes no ingress controller, no particular CNI, no operator. Both paths below produce the same objects.
+You need `kubectl` pointed at a cluster, and `helm` 3.8 or newer for the Helm path. The default install is a Deployment and a ClusterIP Service in namespace `arith`. Helm and Kustomize produce the same objects.
 
 ### 1. Deploy the public image
 
@@ -181,7 +183,7 @@ Each one is a Helm toggle and a Kustomize component, off by default, because eac
 | ServiceMonitor | `serviceMonitor.enabled` | `components/servicemonitor` | the Prometheus Operator CRDs |
 | OTLP export | `env.OTEL_*` | `components/otlp` | a collector, Tempo or Loki to send to |
 
-The two network policies default-deny and then allow: ingress on 8000 from pods in the cluster (or from the namespaces you list, such as your gateway's), probes from the nodes, egress to DNS and to whatever you name as a destination (your OTLP collector). `deploy/helm/arith/values.yaml` documents every value; `deploy/kustomize/overlays/example` composes every component with placeholder names.
+The two network policies default-deny and then allow: ingress on 8000 from pods in the cluster (or from the namespaces you list, such as your gateway's), probes from the nodes, egress to DNS and to whatever you name as a destination (your OTLP collector). `deploy/helm/arith/values.yaml` documents every value. `deploy/kustomize/overlays/example` composes every component with placeholder names. `deploy/examples/arith.giovanni.dev.br.yaml` is a full set that actually runs.
 
 ## Layout
 
