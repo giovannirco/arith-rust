@@ -98,12 +98,6 @@ git clone https://github.com/giovannirco/arith && cd arith
 helm install arith deploy/helm/arith --namespace arith --create-namespace --wait
 ```
 
-Or the published chart, without the clone:
-
-```sh
-helm install arith oci://ghcr.io/giovannirco/charts/arith --namespace arith --create-namespace --wait
-```
-
 The same with Kustomize, no Helm needed:
 
 ```sh
@@ -189,7 +183,7 @@ A release is a commit that bumps the chart version, then a numeric git tag: `git
 helm install arith oci://ghcr.io/giovannirco/charts/arith --version <chart version> --namespace arith --create-namespace
 ```
 
-installs a particular one. The chart in this repository keeps `appVersion: "1"`, so section 3 above always shows a rollout from 1 to 2.
+installs a particular one. The chart in this repository keeps `appVersion: "1"`, so section 3 above always shows a rollout from 1 to 2. Follow the walkthrough with that chart, not a published one: a published chart defaults to the newest image, and `--set image.tag=2` may then change nothing.
 
 ## Optional pieces
 
