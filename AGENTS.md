@@ -1,4 +1,4 @@
-# arith
+# arith-rust
 
 Read [README.md](README.md) first. That file is the contract. If a command in it does not match the tree, fix the tree or the README in the same change. A documented command that does not run is a bug.
 
@@ -21,7 +21,7 @@ src/main.rs            environment in, signals in, exit code out
 web/                   index.html, style.css, app.js; no build step
 tests/                 HTTP contract, tracing behaviour
 Dockerfile             rust:alpine build stage, distroless/static runtime, uid 65532
-deploy/helm/arith      chart: Deployment, Service, optional Ingress, HTTPRoute,
+deploy/helm/arith-rust chart: Deployment, Service, optional Ingress, HTTPRoute,
                        NetworkPolicy, CiliumNetworkPolicy, ServiceMonitor, a helm test
 deploy/kustomize       base (namespace, deployment, service), one component per
                        optional piece, an example overlay
@@ -55,7 +55,7 @@ Everything else is a toggle that is off by default: Ingress, HTTPRoute, NetworkP
 
 The README has four pasteable sections, and they are the acceptance test: deploy the public image; request the worked example from a pod in the namespace; change `sum`, build tag `2`, roll it out, request again; delete the namespace. Run them on a clean kind cluster before calling a change done.
 
-Image: `ghcr.io/giovannirco/arith`. Tags are plain integers (`1`, `2`), so a rollout is `--set image.tag=2` or `kubectl set image` with one variable. CI publishes a multi-arch image and the chart from a git tag. The Makefile builds the operator's local tag.
+Image: `ghcr.io/giovannirco/arith-rust`. Tags are plain integers (`1`, `2`), so a rollout is `--set image.tag=2` or `kubectl set image` with one variable. CI publishes a multi-arch image and the chart from a git tag. The Makefile builds the operator's local tag.
 
 ## Tests
 

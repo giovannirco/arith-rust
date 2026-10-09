@@ -1,4 +1,4 @@
-# arith
+# arith-rust
 
 Integer arithmetic over HTTP: signed 64-bit terms, four endpoints, a page that calls them, Prometheus on `/metrics`. One process on port 8000.
 
@@ -7,7 +7,7 @@ The default install is a Deployment and a ClusterIP Service and nothing else, so
 ## Install
 
 ```sh
-helm install arith oci://ghcr.io/giovannirco/charts/arith \
+helm install arith oci://ghcr.io/giovannirco/charts/arith-rust \
   --namespace arith --create-namespace --wait
 ```
 
@@ -43,7 +43,7 @@ Ingress, HTTPRoute, NetworkPolicy, CiliumNetworkPolicy, ServiceMonitor and OTLP 
 
 ## Change it and redeploy
 
-The [repository README](https://github.com/giovannirco/arith#3-change-the-api-and-redeploy) walks through editing an operation, building tag `2`, rolling it out with `helm upgrade --set image.tag=2`, and asking again.
+The [repository README](https://github.com/giovannirco/arith-rust#3-change-the-api-and-redeploy) walks through editing an operation, building tag `2`, rolling it out with `helm upgrade --set image.tag=2`, and asking again.
 
 ## License
 

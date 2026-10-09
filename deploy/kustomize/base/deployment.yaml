@@ -35,7 +35,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: arith
-          image: ghcr.io/giovannirco/arith
+          image: ghcr.io/giovannirco/arith-rust
           imagePullPolicy: IfNotPresent
           ports:
             - name: http

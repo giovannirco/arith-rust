@@ -16,7 +16,7 @@ RUN --mount=type=cache,target=/usr/local/cargo/registry \
 # Stage 2: nothing but the binary, CA certificates and a non-root user.
 # distroless/static has no shell and no package manager. Pinned by digest.
 FROM gcr.io/distroless/static-debian12:nonroot@sha256:afa5c872c891853ca7fcf1f12c3edb23f7eeef36189728842dd51042ff57f7ab
-LABEL org.opencontainers.image.source="https://github.com/giovannirco/arith" \
+LABEL org.opencontainers.image.source="https://github.com/giovannirco/arith-rust" \
       org.opencontainers.image.description="Integer arithmetic over HTTP: four endpoints, a page, metrics, traces and logs." \
       org.opencontainers.image.licenses="MIT"
 COPY --from=build /arith /arith

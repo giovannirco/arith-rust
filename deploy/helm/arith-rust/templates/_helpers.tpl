@@ -1,8 +1,9 @@
 {{/*
-Chart name, allowing an override.
+The service is called arith whatever the chart package is called (arith-rust),
+so object names, labels and the Service URL stay the same. nameOverride wins.
 */}}
 {{- define "arith.name" -}}
-{{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" }}
+{{- default "arith" .Values.nameOverride | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
 {{/*
@@ -12,7 +13,7 @@ Resource name. Release name when it contains the chart name, both otherwise.
 {{- if .Values.fullnameOverride }}
 {{- .Values.fullnameOverride | trunc 63 | trimSuffix "-" }}
 {{- else }}
-{{- $name := default .Chart.Name .Values.nameOverride }}
+{{- $name := default "arith" .Values.nameOverride }}
 {{- if contains $name .Release.Name }}
 {{- .Release.Name | trunc 63 | trimSuffix "-" }}
 {{- else }}

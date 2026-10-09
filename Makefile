@@ -1,11 +1,11 @@
 # Variables you may want to override on the command line:
 #   make image TAG=2
 #   make deploy TAG=2 NAMESPACE=arith
-IMAGE     ?= ghcr.io/giovannirco/arith
+IMAGE     ?= ghcr.io/giovannirco/arith-rust
 TAG       ?= 1
 NAMESPACE ?= arith
 RELEASE   ?= arith
-CHART     ?= deploy/helm/arith
+CHART     ?= deploy/helm/arith-rust
 
 .PHONY: help test cover lint run image push deploy upgrade remove kustomize-deploy kustomize-remove
 

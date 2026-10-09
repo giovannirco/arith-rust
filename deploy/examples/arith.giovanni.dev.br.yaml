@@ -2,7 +2,7 @@
 # Gateway (Gateway API), Grafana's k8s-monitoring Alloy and the Prometheus
 # Operator CRDs. Every optional piece of the chart is on here.
 #
-#   helm install arith deploy/helm/arith --namespace arith --create-namespace \
+#   helm install arith deploy/helm/arith-rust --namespace arith --create-namespace \
 #     -f deploy/examples/arith.giovanni.dev.br.yaml --wait
 
 env:

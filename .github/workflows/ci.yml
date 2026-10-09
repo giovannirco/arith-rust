@@ -1,7 +1,7 @@
 # Every push and pull request: format, lint, tests with coverage, chart and
 # kustomize rendering, a helm install and helm test on kind, and an image build
 # for both architectures.
-# Pushes to master also publish the image as ghcr.io/giovannirco/arith:sha-<short>.
+# Pushes to master also publish the image as ghcr.io/giovannirco/arith-rust:sha-<short>.
 # A tag made of digits (git tag 2 && git push origin 2) publishes the image as
 # :2 and :latest, and the chart to oci://ghcr.io/giovannirco/charts with that
 # app version, plus the Artifact Hub repository metadata on the artifacthub.io
@@ -26,9 +26,9 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
-  IMAGE: ghcr.io/giovannirco/arith
+  IMAGE: ghcr.io/giovannirco/arith-rust
   CHARTS: oci://ghcr.io/giovannirco/charts
-  CHART_REPO: ghcr.io/giovannirco/charts/arith
+  CHART_REPO: ghcr.io/giovannirco/charts/arith-rust
 
 jobs:
   test:
@@ -64,15 +64,15 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       # The chart carries its own copy of the license; keep it identical.
-      - run: cmp LICENSE deploy/helm/arith/LICENSE
-      - run: helm lint deploy/helm/arith
-      - run: helm lint deploy/helm/arith -f deploy/helm/arith/ci/all-on-values.yaml
-      - run: helm template arith deploy/helm/arith -n arith > /dev/null
-      - run: helm template arith deploy/helm/arith -n arith -f deploy/helm/arith/ci/all-on-values.yaml > /dev/null
+      - run: cmp LICENSE deploy/helm/arith-rust/LICENSE
+      - run: helm lint deploy/helm/arith-rust
+      - run: helm lint deploy/helm/arith-rust -f deploy/helm/arith-rust/ci/all-on-values.yaml
+      - run: helm template arith deploy/helm/arith-rust -n arith > /dev/null
+      - run: helm template arith deploy/helm/arith-rust -n arith -f deploy/helm/arith-rust/ci/all-on-values.yaml > /dev/null
       # --set image.tag=2 arrives as an integer; the image line must still read :2.
       # Quoted: a bare `image: ` in a YAML scalar is a mapping and GitHub
       # refuses the workflow file.
-      - run: "helm template arith deploy/helm/arith -n arith --set image.tag=2 | grep -q 'image: \"ghcr.io/giovannirco/arith:2\"'"
+      - run: "helm template arith deploy/helm/arith-rust -n arith --set image.tag=2 | grep -q 'image: \"ghcr.io/giovannirco/arith-rust:2\"'"
       - run: kubectl kustomize deploy/kustomize/base > /dev/null
       - run: kubectl kustomize deploy/kustomize/overlays/example > /dev/null
 
@@ -85,7 +85,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: helm/kind-action@v1
-      - run: helm install arith deploy/helm/arith --namespace arith --create-namespace --wait --timeout 3m
+      - run: helm install arith deploy/helm/arith-rust --namespace arith --create-namespace --wait --timeout 3m
       # No --logs: the hook deletes the test pod on success before Helm 3 reads
       # it. On failure the pod stays, and the next step prints it.
       - run: helm test arith --namespace arith
@@ -192,10 +192,10 @@ jobs:
       - name: Refuse a chart version that is already on GHCR
         shell: bash
         run: |
-          version="$(yq .version deploy/helm/arith/Chart.yaml)"
+          version="$(yq .version deploy/helm/arith-rust/Chart.yaml)"
           published="$(oras repo tags "$CHART_REPO")"
           if grep -qxF "$version" <<< "$published"; then
-            echo "::error file=deploy/helm/arith/Chart.yaml::chart $version is already on GHCR; bump version in Chart.yaml"
+            echo "::error file=deploy/helm/arith-rust/Chart.yaml::chart $version is already on GHCR; bump version in Chart.yaml"
             exit 1
           fi
       # Git keeps appVersion "1" so the README walkthrough (build 2, roll it
@@ -203,18 +203,18 @@ jobs:
       # ships with, and its Artifact Hub image annotation says the same.
       - name: Point appVersion and the image annotation at this tag
         shell: bash
-        working-directory: deploy/helm/arith
+        working-directory: deploy/helm/arith-rust
         run: |
           yq -i ".appVersion = \"$GITHUB_REF_NAME\" |
                  .annotations[\"artifacthub.io/images\"] |= sub(\"arith:[0-9]+\", \"arith:$GITHUB_REF_NAME\")" Chart.yaml
           test "$(yq '.annotations["artifacthub.io/images"] | from_yaml | .[0].image' Chart.yaml)" = "$IMAGE:$GITHUB_REF_NAME"
-      - run: helm package deploy/helm/arith --destination /tmp/chart
+      - run: helm package deploy/helm/arith-rust --destination /tmp/chart
       - run: echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ghcr.io --username "$GITHUB_ACTOR" --password-stdin
       - run: helm push /tmp/chart/arith-*.tgz "$CHARTS"
       # Artifact Hub reads the repository metadata (verified publisher, owners)
       # from this tag next to the chart, as its docs describe for OCI.
       - name: Push the Artifact Hub repository metadata
-        working-directory: deploy/helm/arith
+        working-directory: deploy/helm/arith-rust
         run: |
           oras push "$CHART_REPO:artifacthub.io" \
             --config /dev/null:application/vnd.cncf.artifacthub.config.v1+yaml \

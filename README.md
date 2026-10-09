@@ -1,4 +1,4 @@
-# arith
+# arith-rust
 
 arith does integer arithmetic over HTTP. Four endpoints, a page that calls them, Prometheus on `/metrics`. One Rust process on port 8000. Traces and logs go over OTLP if you set the usual `OTEL_*` variables; otherwise they stay on stdout.
 
@@ -94,8 +94,8 @@ You need `kubectl` pointed at a cluster, and `helm` 3.8 or newer for the Helm pa
 ### 1. Deploy the public image
 
 ```sh
-git clone https://github.com/giovannirco/arith && cd arith
-helm install arith deploy/helm/arith --namespace arith --create-namespace --wait
+git clone https://github.com/giovannirco/arith-rust && cd arith-rust
+helm install arith deploy/helm/arith-rust --namespace arith --create-namespace --wait
 ```
 
 The same with Kustomize, no Helm needed:
@@ -146,16 +146,16 @@ make image TAG=2
 Put the image where the cluster can pull it. For kind:
 
 ```sh
-kind load docker-image ghcr.io/giovannirco/arith:2 --name kind
+kind load docker-image ghcr.io/giovannirco/arith-rust:2 --name kind
 ```
 
-For minikube, `minikube image load ghcr.io/giovannirco/arith:2`. For a real cluster, push to a registry it trusts and add `--set image.repository=registry.example.com/arith` to the next command.
+For minikube, `minikube image load ghcr.io/giovannirco/arith-rust:2`. For a real cluster, push to a registry it trusts and add `--set image.repository=registry.example.com/arith` to the next command.
 
 ```sh
-helm upgrade arith deploy/helm/arith --namespace arith --set image.tag=2 --wait
+helm upgrade arith deploy/helm/arith-rust --namespace arith --set image.tag=2 --wait
 ```
 
-With Kustomize: `kubectl -n arith set image deployment/arith arith=ghcr.io/giovannirco/arith:2 && kubectl -n arith rollout status deployment/arith`, and write the new tag into `deploy/kustomize/base/kustomization.yaml` so the next apply keeps it.
+With Kustomize: `kubectl -n arith set image deployment/arith arith=ghcr.io/giovannirco/arith-rust:2 && kubectl -n arith rollout status deployment/arith`, and write the new tag into `deploy/kustomize/base/kustomization.yaml` so the next apply keeps it.
 
 Then ask again:
 
@@ -179,13 +179,13 @@ With Kustomize, `kubectl delete -k deploy/kustomize/base` removes the namespace 
 
 Two numbers, and they move separately.
 
-- The **image tag** is a plain integer: `ghcr.io/giovannirco/arith:1`, `:2`. `--set image.tag=2` or `kubectl set image` rolls one out. `make image TAG=2` builds one locally.
-- The **chart version** is semver, in `deploy/helm/arith/Chart.yaml`. It goes up whenever a template or a default changes, and the chart's `appVersion` is the image tag it installs by default.
+- The **image tag** is a plain integer: `ghcr.io/giovannirco/arith-rust:1`, `:2`. `--set image.tag=2` or `kubectl set image` rolls one out. `make image TAG=2` builds one locally.
+- The **chart version** is semver, in `deploy/helm/arith-rust/Chart.yaml`. It goes up whenever a template or a default changes, and the chart's `appVersion` is the image tag it installs by default.
 
-A release is a commit that bumps the chart version, then a numeric git tag: `git tag 2 && git push origin 2`. CI publishes the image as `:2` and `:latest`, and the chart at its new version with `appVersion` set to `2`. If that chart version is already on GHCR the chart job fails instead of overwriting it. `oras repo tags ghcr.io/giovannirco/charts/arith` lists what is published, and
+A release is a commit that bumps the chart version, then a numeric git tag: `git tag 2 && git push origin 2`. CI publishes the image as `:2` and `:latest`, and the chart at its new version with `appVersion` set to `2`. If that chart version is already on GHCR the chart job fails instead of overwriting it. `oras repo tags ghcr.io/giovannirco/charts/arith-rust` lists what is published, and
 
 ```sh
-helm install arith oci://ghcr.io/giovannirco/charts/arith --version <chart version> --namespace arith --create-namespace
+helm install arith oci://ghcr.io/giovannirco/charts/arith-rust --version <chart version> --namespace arith --create-namespace
 ```
 
 installs a particular one. The chart in this repository keeps `appVersion: "1"`, so section 3 above always shows a rollout from 1 to 2. Follow the walkthrough with that chart, not a published one: a published chart defaults to the newest image, and `--set image.tag=2` may then change nothing.
@@ -203,7 +203,7 @@ Each one is a Helm toggle and a Kustomize component, off by default, because eac
 | ServiceMonitor | `serviceMonitor.enabled` | `components/servicemonitor` | the Prometheus Operator CRDs |
 | OTLP export | `env.OTEL_*` | `components/otlp` | a collector, Tempo or Loki to send to |
 
-The two network policies default-deny and then allow: ingress on 8000 from pods in the cluster (or from the namespaces you list, such as your gateway's), probes from the nodes, egress to DNS and to whatever you name as a destination (your OTLP collector). `deploy/helm/arith/values.yaml` documents every value. `deploy/kustomize/overlays/example` composes every component with placeholder names. `deploy/examples/arith.giovanni.dev.br.yaml` is a full set that actually runs.
+The two network policies default-deny and then allow: ingress on 8000 from pods in the cluster (or from the namespaces you list, such as your gateway's), probes from the nodes, egress to DNS and to whatever you name as a destination (your OTLP collector). `deploy/helm/arith-rust/values.yaml` documents every value. `deploy/kustomize/overlays/example` composes every component with placeholder names. `deploy/examples/arith.giovanni.dev.br.yaml` is a full set that actually runs.
 
 ## Layout
 
@@ -220,7 +220,7 @@ src/main.rs            reads the environment and the signals
 web/                   index.html, style.css, app.js
 tests/                 the HTTP contract and the tracing behaviour
 Dockerfile             rust:alpine build, distroless/static runtime, uid 65532
-deploy/helm/arith      the chart
+deploy/helm/arith-rust the chart
 deploy/kustomize       base, components, an example overlay
 Makefile               test, cover, lint, run, image, push, deploy, upgrade, remove
 ```
