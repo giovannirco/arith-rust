@@ -4,7 +4,7 @@ arith does integer arithmetic over HTTP. Four endpoints, a page that calls them,
 
 Helm and Kustomize both install a Deployment and a ClusterIP Service. The default install works on a cluster that has nothing else: no ingress controller, no special CNI, no operator.
 
-This is the Rust implementation. The same service in Ruby, with the same API, page and deploy steps, is <https://github.com/giovannirco/arith>; that one runs at <https://arith.giovanni.dev.br>.
+This is the Rust implementation. The same contract is also implemented in Ruby, <https://github.com/giovannirco/arith-ruby>, and in TypeScript, <https://github.com/giovannirco/arith-ts>; the TypeScript one runs at <https://arith.giovanni.dev.br>.
 
 ## API
 
