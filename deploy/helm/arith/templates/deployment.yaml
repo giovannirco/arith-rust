@@ -59,6 +59,15 @@ spec:
             {{- toYaml . | nindent 12 }}
             {{- end }}
           {{- end }}
+          {{- if .Values.preStopSleepSeconds }}
+          # Kubernetes drops the pod from the Service and sends SIGTERM at the
+          # same moment. Pausing before the signal lets the endpoint change
+          # reach every node first, so no request lands on a closed listener.
+          lifecycle:
+            preStop:
+              sleep:
+                seconds: {{ .Values.preStopSleepSeconds }}
+          {{- end }}
           readinessProbe:
             httpGet:
               path: /healthz

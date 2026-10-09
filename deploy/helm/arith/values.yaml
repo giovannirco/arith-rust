@@ -37,7 +37,13 @@ resources:
   limits:
     memory: 64Mi
 
-# Longer than ARITH_SHUTDOWN_TIMEOUT (10s), so draining finishes before the kill.
+# Seconds to keep serving after Kubernetes decides to stop the pod, before
+# SIGTERM is sent, so endpoint changes reach every node first. Uses the native
+# sleep handler (Kubernetes 1.30+); set 0 to omit it.
+preStopSleepSeconds: 3
+
+# Longer than preStopSleepSeconds + ARITH_SHUTDOWN_TIMEOUT (10s), so draining
+# finishes before the kill.
 terminationGracePeriodSeconds: 20
 
 podAnnotations: {}
