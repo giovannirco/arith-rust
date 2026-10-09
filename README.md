@@ -4,7 +4,7 @@ arith does integer arithmetic over HTTP. Four endpoints, a page that calls them,
 
 Helm and Kustomize both install a Deployment and a ClusterIP Service. The default install works on a cluster that has nothing else: no ingress controller, no special CNI, no operator.
 
-I run one at <https://arith.giovanni.dev.br>. The values for that cluster are in `deploy/examples/arith.giovanni.dev.br.yaml`.
+This is the Rust implementation. The same service in Ruby, with the same API, page and deploy steps, is <https://github.com/giovannirco/arith>; that one runs at <https://arith.giovanni.dev.br>.
 
 ## API
 
@@ -203,7 +203,7 @@ Each one is a Helm toggle and a Kustomize component, off by default, because eac
 | ServiceMonitor | `serviceMonitor.enabled` | `components/servicemonitor` | the Prometheus Operator CRDs |
 | OTLP export | `env.OTEL_*` | `components/otlp` | a collector, Tempo or Loki to send to |
 
-The two network policies default-deny and then allow: ingress on 8000 from pods in the cluster (or from the namespaces you list, such as your gateway's), probes from the nodes, egress to DNS and to whatever you name as a destination (your OTLP collector). `deploy/helm/arith-rust/values.yaml` documents every value. `deploy/kustomize/overlays/example` composes every component with placeholder names. `deploy/examples/arith.giovanni.dev.br.yaml` is a full set that actually runs.
+The two network policies default-deny and then allow: ingress on 8000 from pods in the cluster (or from the namespaces you list, such as your gateway's), probes from the nodes, egress to DNS and to whatever you name as a destination (your OTLP collector). `deploy/helm/arith-rust/values.yaml` documents every value. `deploy/kustomize/overlays/example` composes every component with placeholder names.
 
 ## Layout
 
