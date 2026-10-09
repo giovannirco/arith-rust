@@ -98,6 +98,12 @@ git clone https://github.com/giovannirco/arith && cd arith
 helm install arith deploy/helm/arith --namespace arith --create-namespace --wait
 ```
 
+Or the published chart, without the clone:
+
+```sh
+helm install arith oci://ghcr.io/giovannirco/charts/arith --namespace arith --create-namespace --wait
+```
+
 The same with Kustomize, no Helm needed:
 
 ```sh
@@ -169,6 +175,21 @@ kubectl delete namespace arith
 ```
 
 With Kustomize, `kubectl delete -k deploy/kustomize/base` removes the namespace too.
+
+## Versions
+
+Two numbers, and they move separately.
+
+- The **image tag** is a plain integer: `ghcr.io/giovannirco/arith:1`, `:2`. `--set image.tag=2` or `kubectl set image` rolls one out. `make image TAG=2` builds one locally.
+- The **chart version** is semver, in `deploy/helm/arith/Chart.yaml`. It goes up whenever a template or a default changes, and the chart's `appVersion` is the image tag it installs by default.
+
+A release is a commit that bumps the chart version, then a numeric git tag: `git tag 2 && git push origin 2`. CI publishes the image as `:2` and `:latest`, and the chart at its new version with `appVersion` set to `2`. If that chart version is already on GHCR the chart job fails instead of overwriting it. `oras repo tags ghcr.io/giovannirco/charts/arith` lists what is published, and
+
+```sh
+helm install arith oci://ghcr.io/giovannirco/charts/arith --version <chart version> --namespace arith --create-namespace
+```
+
+installs a particular one. The chart in this repository keeps `appVersion: "1"`, so section 3 above always shows a rollout from 1 to 2.
 
 ## Optional pieces
 
