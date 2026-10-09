@@ -16,6 +16,14 @@ on:
 permissions:
   contents: read
 
+# One run per ref at a time, so two pushes to master never write two
+# manifests at once. A newer push waits (GitHub keeps only the newest pending
+# run); a running publish or tag release is never cancelled. Pull requests
+# drop their superseded runs.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 env:
   IMAGE: ghcr.io/giovannirco/arith
   CHARTS: oci://ghcr.io/giovannirco/charts
