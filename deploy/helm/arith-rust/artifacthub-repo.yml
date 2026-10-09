@@ -1,0 +1,9 @@
+# Artifact Hub repository metadata. CI pushes this file to
+# ghcr.io/giovannirco/charts/arith-ts:artifacthub.io with oras; that OCI tag,
+# not this copy in git, is what Artifact Hub reads.
+# The ID of this chart's Artifact Hub entry goes here once it exists; until
+# then the owners below can claim it.
+# repositoryID: <from the Artifact Hub control panel>
+owners:
+  - name: Giovanni Coutinho
+    email: giovannirco@gmail.com
