@@ -1,0 +1,13 @@
+# GitHub Actions only. Crates are left out on purpose: a crate bump belongs in
+# a commit that also updates Cargo.lock and passes make test, made by hand.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: ci
+    groups:
+      actions:
+        patterns: ["*"]
