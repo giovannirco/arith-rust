@@ -57,7 +57,9 @@ jobs:
       - run: helm template arith deploy/helm/arith -n arith > /dev/null
       - run: helm template arith deploy/helm/arith -n arith -f deploy/helm/arith/ci/all-on-values.yaml > /dev/null
       # --set image.tag=2 arrives as an integer; the image line must still read :2.
-      - run: helm template arith deploy/helm/arith -n arith --set image.tag=2 | grep -q 'image: "ghcr.io/giovannirco/arith:2"'
+      # Quoted: a bare `image: ` in a YAML scalar is a mapping and GitHub
+      # refuses the workflow file.
+      - run: "helm template arith deploy/helm/arith -n arith --set image.tag=2 | grep -q 'image: \"ghcr.io/giovannirco/arith:2\"'"
       - run: kubectl kustomize deploy/kustomize/base > /dev/null
       - run: kubectl kustomize deploy/kustomize/overlays/example > /dev/null
 
