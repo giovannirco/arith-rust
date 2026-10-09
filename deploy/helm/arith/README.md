@@ -16,8 +16,8 @@ Add `--version <chart version>` to pin one. `helm test arith -n arith` asks the 
 From inside the cluster:
 
 ```sh
-kubectl -n arith run client --rm -i --restart=Never --image=curlimages/curl:8.22.0 -- \
-  curl -s 'http://arith:8000/api/sub?term_one=4&term_two=1'
+kubectl -n arith run client --rm -i --restart=Never --image=curlimages/curl:8.22.0 \
+  --command -- sh -c "sleep 2; curl -s 'http://arith:8000/api/sub?term_one=4&term_two=1'"
 ```
 
 prints `{"result":3}`. For the page, `kubectl -n arith port-forward svc/arith 8000:8000` and open <http://localhost:8000>.

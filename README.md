@@ -108,11 +108,11 @@ kubectl -n arith rollout status deployment/arith
 ### 2. Request it from inside the cluster
 
 ```sh
-kubectl -n arith run client --rm -i --restart=Never --image=curlimages/curl:8.22.0 -- \
-  curl -s 'http://arith:8000/api/sub?term_one=4&term_two=1'
+kubectl -n arith run client --rm -i --restart=Never --image=curlimages/curl:8.22.0 \
+  --command -- sh -c "sleep 2; curl -s 'http://arith:8000/api/sub?term_one=4&term_two=1'"
 ```
 
-Prints `{"result":3}`. `helm test arith -n arith` runs the same check as a Helm test. For the page:
+Prints `{"result":3}`. The pause lets kubectl attach before curl exits; without it a pod this quick often prints nothing. `helm test arith -n arith` runs the same check as a Helm test. For the page:
 
 ```sh
 kubectl -n arith port-forward svc/arith 8000:8000
@@ -155,8 +155,8 @@ With Kustomize: `kubectl -n arith set image deployment/arith arith=ghcr.io/giova
 Then ask again:
 
 ```sh
-kubectl -n arith run client --rm -i --restart=Never --image=curlimages/curl:8.22.0 -- \
-  curl -s 'http://arith:8000/api/sum?term_one=9223372036854775807&term_two=1'
+kubectl -n arith run client --rm -i --restart=Never --image=curlimages/curl:8.22.0 \
+  --command -- sh -c "sleep 2; curl -s 'http://arith:8000/api/sum?term_one=9223372036854775807&term_two=1'"
 ```
 
 Prints `{"result":9223372036854775807}` where tag 1 answered `400`.
