@@ -1,5 +1,6 @@
 # Every push and pull request: format, lint, tests with coverage, chart and
-# kustomize rendering, and an image build for both architectures.
+# kustomize rendering, a helm install and helm test on kind, and an image build
+# for both architectures.
 # Pushes to master also publish the image as ghcr.io/giovannirco/arith:sha-<short>.
 # A tag made of digits (git tag 2 && git push origin 2) publishes the image as
 # :2 and :latest, and the chart to oci://ghcr.io/giovannirco/charts with that
@@ -74,6 +75,20 @@ jobs:
       - run: "helm template arith deploy/helm/arith -n arith --set image.tag=2 | grep -q 'image: \"ghcr.io/giovannirco/arith:2\"'"
       - run: kubectl kustomize deploy/kustomize/base > /dev/null
       - run: kubectl kustomize deploy/kustomize/overlays/example > /dev/null
+
+  # Install the chart from this commit on a fresh kind cluster and run its
+  # helm test, which curls /api/sub?term_one=4&term_two=1 through the Service
+  # and expects {"result":3}. The image is the chart's default, from GHCR.
+  smoke:
+    needs: [manifests]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: helm/kind-action@v1
+      - run: helm install arith deploy/helm/arith --namespace arith --create-namespace --wait --timeout 3m
+      - run: helm test arith --namespace arith --logs
+      - if: failure()
+        run: kubectl -n arith get all,events && kubectl -n arith logs deployment/arith --tail 50
 
   image:
     needs: [test]
