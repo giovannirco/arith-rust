@@ -22,16 +22,22 @@ Resource name. Release name when it contains the chart name, both otherwise.
 {{- end }}
 
 {{/*
-The image reference. An empty tag means the chart's appVersion.
+The image tag. An empty value means the chart's appVersion. Tags are plain
+integers here, and `--set image.tag=2` hands the template an int, so it is
+turned into a string before anything prints it.
 */}}
+{{- define "arith.tag" -}}
+{{- .Values.image.tag | toString | default .Chart.AppVersion }}
+{{- end }}
+
 {{- define "arith.image" -}}
-{{- printf "%s:%s" .Values.image.repository (default .Chart.AppVersion .Values.image.tag) }}
+{{- printf "%s:%s" .Values.image.repository (include "arith.tag" .) }}
 {{- end }}
 
 {{- define "arith.labels" -}}
 helm.sh/chart: {{ printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" }}
 {{ include "arith.selectorLabels" . }}
-app.kubernetes.io/version: {{ default .Chart.AppVersion .Values.image.tag | quote }}
+app.kubernetes.io/version: {{ include "arith.tag" . | quote }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- end }}
 
