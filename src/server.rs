@@ -45,8 +45,19 @@ mod tests {
     use super::*;
     use crate::{AppState, router};
     use std::net::SocketAddr;
-    use tokio::io::AsyncWriteExt;
+    use tokio::io::{AsyncReadExt, AsyncWriteExt};
     use tokio::net::TcpStream;
+
+    /// One HTTP/1.1 request over a plain socket, so the test depends on
+    /// nothing but the server.
+    async fn get(addr: SocketAddr, path: &str) -> String {
+        let mut stream = TcpStream::connect(addr).await.unwrap();
+        let request = format!("GET {path} HTTP/1.1\r\nHost: arith\r\nConnection: close\r\n\r\n");
+        stream.write_all(request.as_bytes()).await.unwrap();
+        let mut response = String::new();
+        stream.read_to_string(&mut response).await.unwrap();
+        response
+    }
 
     async fn start(
         grace: Duration,
@@ -66,13 +77,9 @@ mod tests {
     async fn serves_then_stops_when_asked() {
         let (addr, stop, task) = start(Duration::from_secs(5)).await;
 
-        let body = reqwest::get(format!("http://{addr}/api/sum?term_one=4&term_two=1"))
-            .await
-            .unwrap()
-            .text()
-            .await
-            .unwrap();
-        assert_eq!(body, r#"{"result":5}"#);
+        let response = get(addr, "/api/sum?term_one=4&term_two=1").await;
+        assert!(response.starts_with("HTTP/1.1 200 OK\r\n"), "{response}");
+        assert!(response.ends_with(r#"{"result":5}"#), "{response}");
 
         stop.send(true).unwrap();
         tokio::time::timeout(Duration::from_secs(5), task)
