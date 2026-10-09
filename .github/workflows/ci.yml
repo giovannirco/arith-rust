@@ -86,9 +86,14 @@ jobs:
       - uses: actions/checkout@v7
       - uses: helm/kind-action@v1
       - run: helm install arith deploy/helm/arith --namespace arith --create-namespace --wait --timeout 3m
-      - run: helm test arith --namespace arith --logs
+      # No --logs: the hook deletes the test pod on success before Helm 3 reads
+      # it. On failure the pod stays, and the next step prints it.
+      - run: helm test arith --namespace arith
       - if: failure()
-        run: kubectl -n arith get all,events && kubectl -n arith logs deployment/arith --tail 50
+        run: |
+          kubectl -n arith get all,events
+          kubectl -n arith logs arith-test || true
+          kubectl -n arith logs deployment/arith --tail 50
 
   image:
     needs: [test]
