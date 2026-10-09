@@ -2,9 +2,11 @@ apiVersion: v2
 name: arith
 description: Integer arithmetic over HTTP. Four endpoints, a page, metrics, traces and logs.
 type: application
-# The chart's own version. Bump when a template or default changes.
-version: 1.0.0
+# The chart's own semver. Bump it whenever a template or a default changes;
+# CI refuses to publish a version that is already on GHCR.
+version: 1.0.1
 # The image tag installed by default. Override with --set image.tag=<tag>.
+# A numeric git tag packages the chart with appVersion set to that tag.
 appVersion: "1"
 home: https://github.com/giovannirco/arith
 sources:
@@ -12,3 +14,15 @@ sources:
 maintainers:
   - name: Giovanni Coutinho
     url: https://github.com/giovannirco
+annotations:
+  artifacthub.io/license: MIT
+  artifacthub.io/links: |
+    - name: source
+      url: https://github.com/giovannirco/arith
+  # The tag follows appVersion; CI rewrites both when it packages a release.
+  artifacthub.io/images: |
+    - name: arith
+      image: ghcr.io/giovannirco/arith:1
+      platforms:
+        - linux/amd64
+        - linux/arm64
