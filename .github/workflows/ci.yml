@@ -1,19 +1,22 @@
-# Every push and pull request: format, lint, tests with coverage, chart and
-# kustomize rendering, this commit's image and chart installed and tested on
-# kind, and an image build for both architectures.
-# Pushes to master, and pull requests from this repository, also publish the
-# image as ghcr.io/giovannirco/arith-rust:sha-<commit>.
-# A tag made of digits (git tag 2 && git push origin 2) publishes the image as
-# :2 and :latest, and the chart to oci://ghcr.io/giovannirco/charts with that
-# app version. The chart job fails if Chart.yaml's version is already
-# published. Every push to master or a tag also pushes the Artifact Hub
-# repository metadata to the chart's artifacthub.io tag.
+# Every push and pull request: rustfmt, clippy, tests with coverage, a check
+# that every version agrees, chart and kustomize rendering, this commit's image
+# and chart installed and tested on kind, and an image build for both
+# architectures.
+#
+# One version per release. A tag v<version> (git tag v$(make version) && git
+# push origin v$(make version)) publishes ghcr.io/giovannirco/arith-rust:<version> and the chart
+# <version>, whose appVersion is the same, to oci://ghcr.io/giovannirco/charts.
+# The tag must match Cargo.toml and Chart.yaml, and the chart job refuses a
+# version that is already published. Pushes to master and pull requests from
+# this repository publish ghcr.io/giovannirco/arith-rust:sha-<commit>. Nothing
+# is ever tagged latest or with a bare integer. Every push to master or a tag
+# also pushes the Artifact Hub repository metadata.
 name: ci
 
 on:
   push:
     branches: [master]
-    tags: ["[0-9]+"]
+    tags: ["v[0-9]+.[0-9]+.[0-9]+"]
   pull_request:
 
 permissions:
@@ -69,16 +72,41 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+      # One version per release: Cargo.toml, the chart's version and
+      # appVersion, its Artifact Hub image, the Kustomize tag and the docs all
+      # carry it, and on a release tag so does the tag.
+      - name: Every version agrees
+        shell: bash
+        run: |
+          version="$(make -s version)"
+          chart=deploy/helm/arith-rust/Chart.yaml
+          failed=0
+          check() { [ "$2" = "$3" ] || { echo "::error::$1 is \"$2\", expected \"$3\""; failed=1; }; }
+          [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "::error::the version in Cargo.toml, \"$version\", is not x.y.z"; failed=1; }
+          check "Chart.yaml version" "$(yq .version "$chart")" "$version"
+          check "Chart.yaml appVersion" "$(yq .appVersion "$chart")" "$version"
+          check "Chart.yaml artifacthub.io/images" "$(yq '.annotations["artifacthub.io/images"] | from_yaml | .[0].image' "$chart")" "$IMAGE:$version"
+          check "kustomize base newTag" "$(yq '.images[0].newTag' deploy/kustomize/base/kustomization.yaml)" "$version"
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then check "git tag" "$GITHUB_REF_NAME" "v$version"; fi
+          # The docs name the release too: a version next to the image, a
+          # chart, an install or a tag must be this one.
+          while IFS=: read -r file line match; do
+            echo "::error file=$file,line=$line::$file names $match, expected $version"; failed=1
+          done < <(grep -noE '(arith-rust:|--version |[^a-z]v|chart `|appVersion `|[(]`)[0-9]+[.][0-9]+[.][0-9]+' \
+                     README.md CONTRIBUTING.md deploy/helm/arith-rust/README.md \
+                   | grep -vE "[^0-9.]${version//./[.]}\$")
+          exit "$failed"
       # The chart carries its own copy of the license; keep it identical.
       - run: cmp LICENSE deploy/helm/arith-rust/LICENSE
       - run: helm lint deploy/helm/arith-rust
       - run: helm lint deploy/helm/arith-rust -f deploy/helm/arith-rust/ci/all-on-values.yaml
       - run: helm template arith deploy/helm/arith-rust -n arith > /dev/null
       - run: helm template arith deploy/helm/arith-rust -n arith -f deploy/helm/arith-rust/ci/all-on-values.yaml > /dev/null
-      # --set image.tag=2 arrives as an integer; the image line must still read :2.
+      # The image tag defaults to appVersion, and --set image.tag replaces it.
       # Quoted: a bare `image: ` in a YAML scalar is a mapping and GitHub
       # refuses the workflow file.
-      - run: "helm template arith deploy/helm/arith-rust -n arith --set image.tag=2 | grep -q 'image: \"ghcr.io/giovannirco/arith-rust:2\"'"
+      - run: "helm template arith deploy/helm/arith-rust -n arith | grep -q \"image: \\\"$IMAGE:$(make -s version)\\\"\""
+      - run: "helm template arith deploy/helm/arith-rust -n arith --set image.tag=dev | grep -q 'image: \"ghcr.io/giovannirco/arith-rust:dev\"'"
       - run: kubectl kustomize deploy/kustomize/base > /dev/null
       - run: kubectl kustomize deploy/kustomize/overlays/example > /dev/null
 
@@ -176,18 +204,18 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      # On a pull request, sha-<commit> names the branch's own commit, not
-      # GitHub's merge commit.
+      # sha-<commit> on master and pull requests (the branch's own commit, not
+      # GitHub's merge commit); <version> from a v<version> tag. No latest.
       - id: meta
         uses: docker/metadata-action@v6
         env:
           DOCKER_METADATA_PR_HEAD_SHA: "true"
         with:
           images: ${{ env.IMAGE }}
+          flavor: latest=false
           tags: |
             type=sha,prefix=sha-,enable=${{ !startsWith(github.ref, 'refs/tags/') }}
-            type=ref,event=tag
-            type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/') }}
+            type=semver,pattern={{version}}
       - name: Create the multi-arch manifest
         working-directory: /tmp/digests
         run: |
@@ -198,7 +226,7 @@ jobs:
 
   chart:
     needs: [publish]
-    if: startsWith(github.ref, 'refs/tags/')
+    if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -209,8 +237,8 @@ jobs:
         with:
           version: 1.3.4
       - run: echo "${{ secrets.GITHUB_TOKEN }}" | oras login ghcr.io --username "$GITHUB_ACTOR" --password-stdin
-      # The chart has its own semver. A git tag changes the default image, so
-      # it needs a new chart version too; never overwrite a published one.
+      # Chart version = appVersion = the tag's version (the manifests job checks
+      # that); a published version is never overwritten.
       - name: Refuse a chart version that is already on GHCR
         shell: bash
         run: |
@@ -223,16 +251,6 @@ jobs:
             exit 1
           fi
           grep -qiE 'not found|denied|unknown' lookup.err || { cat lookup.err; exit 1; }
-      # Git keeps appVersion "1" so the README walkthrough (build 2, roll it
-      # out) shows a rollout. The published chart defaults to the image it
-      # ships with, and its Artifact Hub image annotation says the same.
-      - name: Point appVersion and the image annotation at this tag
-        shell: bash
-        working-directory: deploy/helm/arith-rust
-        run: |
-          yq -i ".appVersion = \"$GITHUB_REF_NAME\" |
-                 .annotations[\"artifacthub.io/images\"] |= sub(\"$IMAGE:[0-9]+\", \"$IMAGE:$GITHUB_REF_NAME\")" Chart.yaml
-          test "$(yq '.annotations["artifacthub.io/images"] | from_yaml | .[0].image' Chart.yaml)" = "$IMAGE:$GITHUB_REF_NAME"
       - run: helm package deploy/helm/arith-rust --destination /tmp/chart
       - run: echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ghcr.io --username "$GITHUB_ACTOR" --password-stdin
       - run: helm push /tmp/chart/arith-*.tgz "$CHARTS"

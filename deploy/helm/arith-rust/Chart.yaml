@@ -2,12 +2,11 @@ apiVersion: v2
 name: arith-rust
 description: Integer arithmetic over HTTP. Four endpoints, a page, metrics, traces and logs.
 type: application
-# The chart's own semver. Bump it whenever a template or a default changes;
-# CI refuses to publish a version that is already on GHCR.
-version: 1.1.0
-# The image tag installed by default. Override with --set image.tag=<tag>.
-# A numeric git tag packages the chart with appVersion set to that tag.
-appVersion: "1"
+# One version per release, the same as Cargo.toml: the chart's version, its
+# appVersion (the image tag it installs by default) and the image below. A tag
+# v<version> publishes them; CI checks they agree and never republishes one.
+version: 1.2.0
+appVersion: "1.2.0"
 home: https://github.com/giovannirco/arith-rust
 sources:
   - https://github.com/giovannirco/arith-rust
@@ -19,10 +18,9 @@ annotations:
   artifacthub.io/links: |
     - name: source
       url: https://github.com/giovannirco/arith-rust
-  # The tag follows appVersion; CI rewrites both when it packages a release.
   artifacthub.io/images: |
     - name: arith
-      image: ghcr.io/giovannirco/arith-rust:1
+      image: ghcr.io/giovannirco/arith-rust:1.2.0
       platforms:
         - linux/amd64
         - linux/arm64

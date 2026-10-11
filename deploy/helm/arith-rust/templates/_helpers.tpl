@@ -23,9 +23,9 @@ Resource name. Release name when it contains the chart name, both otherwise.
 {{- end }}
 
 {{/*
-The image tag. An empty value means the chart's appVersion. Tags are plain
-integers here, and `--set image.tag=2` hands the template an int, so it is
-turned into a string before anything prints it.
+The image tag. An empty value means the chart's appVersion. A tag that looks
+like a number (--set image.tag=2) reaches the template as one, so it is turned
+into a string before anything prints it.
 */}}
 {{- define "arith.tag" -}}
 {{- .Values.image.tag | toString | default .Chart.AppVersion }}

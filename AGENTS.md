@@ -53,9 +53,9 @@ Both Helm and Kustomize must produce the same default objects: a Deployment with
 
 Everything else is a toggle that is off by default: Ingress, HTTPRoute, NetworkPolicy, CiliumNetworkPolicy, ServiceMonitor, OTLP export. A toggle in `values.yaml` has a matching component under `deploy/kustomize/components`. When you add a knob to one, add it to the other.
 
-The README has four pasteable sections, and they are the acceptance test: deploy the public image; request the worked example from a pod in the namespace; change `sum`, build tag `2`, roll it out, request again; delete the namespace. Run them on a clean kind cluster before calling a change done.
+The README has four pasteable sections, and they are the acceptance test: deploy the public image; request the worked example from a pod in the namespace; change `sum`, build tag `dev`, roll it out, request again; delete the namespace. Run them on a clean cluster (kind, or a scratch namespace on a real one) before calling a change done.
 
-Image: `ghcr.io/giovannirco/arith-rust`. Tags are plain integers (`1`, `2`), so a rollout is `--set image.tag=2` or `kubectl set image` with one variable. CI publishes a multi-arch image and the chart from a git tag. The Makefile builds the operator's local tag.
+Image: `ghcr.io/giovannirco/arith-rust`. One semver version per release, written in `Cargo.toml` and repeated in `Chart.yaml` (`version`, `appVersion`, the Artifact Hub image), the Kustomize base and the docs; CI fails if they disagree. A tag `v<version>` makes CI publish the multi-arch image `:<version>` and the chart `<version>`. Master and same-repository pull requests publish `:sha-<commit>`. Never a bare integer, never `latest`. Local builds use a tag no release uses, such as `dev`.
 
 ## Tests
 
@@ -75,4 +75,4 @@ A second service. A database. Authentication. A service mesh. An Ingress or a Lo
 - `make run`, then every row of the README's API table returns the documented body, and `/` renders.
 - `make image` produces an image that serves on 8000 as uid 65532 with a read-only root.
 - `helm lint`, `helm template` with every toggle on, and `kubectl kustomize deploy/kustomize/overlays/example` all render and dry-run apply.
-- On a clean kind cluster, following only the README: deploy, request from a pod, change `sum`, redeploy, request again, delete; namespace gone.
+- On a clean cluster (kind, or a scratch namespace on a real one), following only the README: deploy, request from a pod, change `sum`, redeploy, request again, delete; namespace gone.
