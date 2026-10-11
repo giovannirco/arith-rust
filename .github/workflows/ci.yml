@@ -138,16 +138,41 @@ jobs:
           load: true
           tags: ${{ env.IMAGE }}:smoke
           cache-from: type=gha,scope=linux/amd64
-      - uses: helm/kind-action@v1
-      - run: kind load docker-image "$IMAGE:smoke" --name chart-testing
+      # kind itself, pinned and checked against its published checksum. The
+      # runner is thrown away after the job, so the cluster needs no cleanup
+      # (helm/kind-action's cleanup printed a docker error on every run, for a
+      # registry this job never creates).
+      - name: Start a kind cluster
+        env:
+          KIND_VERSION: v0.33.0
+        run: |
+          base="https://github.com/kubernetes-sigs/kind/releases/download/$KIND_VERSION"
+          curl -sSfLo kind "$base/kind-linux-amd64"
+          echo "$(curl -sSfL "$base/kind-linux-amd64.sha256sum" | cut -d' ' -f1)  kind" | sha256sum -c
+          sudo install -m 0755 kind /usr/local/bin/kind
+          kind create cluster --name smoke --wait 120s
+      - run: kind load docker-image "$IMAGE:smoke" --name smoke
       - run: helm install arith deploy/helm/arith-rust --namespace arith --create-namespace --set image.tag=smoke --wait --timeout 3m
-      # No --logs: the hook deletes the test pod on success before Helm 3 reads
-      # it. On failure the pod stays, and the next step prints it.
+      # The chart's own test: a pod asks the Service for 4 - 1 and fails
+      # unless the body is {"result":3}. No --logs: the hook deletes the pod on
+      # success before Helm reads it; on failure the pod stays and the last
+      # step prints it.
       - run: helm test arith --namespace arith
+      # The same question from a plain pod, as README step 2 asks it, with the
+      # answer in the log.
+      - name: Ask the Service from another pod
+        run: |
+          kubectl -n arith run client --restart=Never --image=curlimages/curl:8.22.0 \
+            --command -- curl -sS 'http://arith:8000/api/sub?term_one=4&term_two=1'
+          kubectl -n arith wait pod/client --for=jsonpath='{.status.phase}'=Succeeded --timeout=90s
+          body="$(kubectl -n arith logs client)"
+          echo "GET /api/sub?term_one=4&term_two=1 -> $body"
+          test "$body" = '{"result":3}'
       - if: failure()
         run: |
           kubectl -n arith get all,events
           kubectl -n arith logs arith-test || true
+          kubectl -n arith logs client || true
           kubectl -n arith logs deployment/arith --tail 50
 
   image:
