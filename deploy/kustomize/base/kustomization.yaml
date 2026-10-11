@@ -10,8 +10,9 @@ resources:
   - deployment.yaml
   - service.yaml
 
-# Change newTag to roll out a build, or run:
-#   kubectl -n arith set image deployment/arith arith=ghcr.io/giovannirco/arith-rust:2
+# newTag is the release, the same version as Cargo.toml and Chart.yaml. To
+# roll out a local build instead:
+#   kubectl -n arith set image deployment/arith arith=ghcr.io/giovannirco/arith-rust:dev
 images:
   - name: ghcr.io/giovannirco/arith-rust
-    newTag: "1"
+    newTag: "1.2.0"

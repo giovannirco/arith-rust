@@ -5,7 +5,8 @@ replicaCount: 1
 
 image:
   repository: ghcr.io/giovannirco/arith-rust
-  # Empty means the chart's appVersion. To roll out a build: --set image.tag=2
+  # Empty means the chart's appVersion, the release this chart belongs to. To
+  # roll out a local build: --set image.tag=dev
   tag: ""
   pullPolicy: IfNotPresent
 imagePullSecrets: []

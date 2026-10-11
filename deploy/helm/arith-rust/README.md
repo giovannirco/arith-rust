@@ -35,7 +35,7 @@ Division truncates toward zero. Division by zero, a missing or non-integer term,
 
 ## Versions
 
-The image tag is a plain integer: `--set image.tag=2` rolls out build `2`. The chart version is its own semver and changes when a template or a default does. The chart's `appVersion` is the image tag it installs by default.
+One version per release: chart `1.2.0` has `appVersion` `1.2.0` and installs `ghcr.io/giovannirco/arith-rust:1.2.0`. `--set image.tag=<tag>` installs another build.
 
 ## Values
 
@@ -43,7 +43,7 @@ Ingress, HTTPRoute, NetworkPolicy, CiliumNetworkPolicy, ServiceMonitor and OTLP 
 
 ## Change it and redeploy
 
-The [repository README](https://github.com/giovannirco/arith-rust#3-change-the-api-and-redeploy) walks through editing an operation, building tag `2`, rolling it out with `helm upgrade --set image.tag=2`, and asking again.
+The [repository README](https://github.com/giovannirco/arith-rust#3-change-the-api-and-redeploy) walks through editing an operation, building a local `dev` tag, rolling it out with `helm upgrade --set image.tag=dev`, and asking again.
 
 ## License
 

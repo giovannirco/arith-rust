@@ -1,6 +1,6 @@
 [package]
 name = "arith"
-version = "1.0.0"
+version = "1.2.0"
 edition = "2024"
 rust-version = "1.85"
 description = "Integer arithmetic over HTTP: four endpoints, a page, metrics, traces and logs."
