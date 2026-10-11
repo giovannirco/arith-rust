@@ -1,5 +1,6 @@
-# GitHub Actions only. Crates are left out on purpose: a crate bump belongs in
-# a commit that also updates Cargo.lock and passes make test, made by hand.
+# GitHub Actions and the Dockerfile's base images, weekly. Crates are left out
+# on purpose: a crate bump belongs in a commit that also updates Cargo.lock and
+# passes make test, made by hand.
 version: 2
 updates:
   - package-ecosystem: github-actions
@@ -11,3 +12,15 @@ updates:
     groups:
       actions:
         patterns: ["*"]
+
+  # The base images are pinned by tag and digest. A new Rust release for the
+  # build stage, or a rebuilt distroless image (a Debian security fix),
+  # arrives as a pull request that CI tests like any other change. CI fails
+  # until rust-toolchain.toml moves with the build image, so tests and image
+  # are built by the same Rust.
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: build
