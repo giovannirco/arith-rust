@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 # Stage 1: a static binary for the platform the image is built on.
-FROM rust:1.99-alpine3.23 AS build
+FROM rust:1.99-alpine3.23@sha256:42c2519fdf75d9e34cc61a1aaf34b1a684da9bfd65fe5daefef98d92a801b001 AS build
 RUN apk add --no-cache musl-dev
 WORKDIR /src
 COPY Cargo.toml Cargo.lock ./
@@ -15,7 +15,7 @@ RUN --mount=type=cache,target=/usr/local/cargo/registry \
 
 # Stage 2: nothing but the binary, CA certificates and a non-root user.
 # distroless/static has no shell and no package manager. Pinned by digest.
-FROM gcr.io/distroless/static-debian12:nonroot@sha256:afa5c872c891853ca7fcf1f12c3edb23f7eeef36189728842dd51042ff57f7ab
+FROM gcr.io/distroless/static-debian13:nonroot@sha256:e2e927ec666bae08560abb3c55d0659eceabb657f56b6782ab500a9fc7f555e3
 LABEL org.opencontainers.image.source="https://github.com/giovannirco/arith-rust" \
       org.opencontainers.image.description="Integer arithmetic over HTTP: four endpoints, a page, metrics, traces and logs." \
       org.opencontainers.image.licenses="MIT"
