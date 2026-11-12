@@ -5,8 +5,8 @@ type: application
 # One version per release, the same as Cargo.toml: the chart's version, its
 # appVersion (the image tag it installs by default) and the image below. A tag
 # v<version> publishes them; CI checks they agree and never republishes one.
-version: 1.2.0
-appVersion: "1.2.0"
+version: 1.2.1
+appVersion: "1.2.1"
 home: https://github.com/giovannirco/arith-rust
 sources:
   - https://github.com/giovannirco/arith-rust
@@ -20,7 +20,7 @@ annotations:
       url: https://github.com/giovannirco/arith-rust
   artifacthub.io/images: |
     - name: arith
-      image: ghcr.io/giovannirco/arith-rust:1.2.0
+      image: ghcr.io/giovannirco/arith-rust:1.2.1
       platforms:
         - linux/amd64
         - linux/arm64

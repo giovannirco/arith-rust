@@ -35,7 +35,7 @@ Division truncates toward zero. Division by zero, a missing or non-integer term,
 
 ## Versions
 
-One version per release: chart `1.2.0` has `appVersion` `1.2.0` and installs `ghcr.io/giovannirco/arith-rust:1.2.0`. `--set image.tag=<tag>` installs another build.
+One version per release: chart `1.2.1` has `appVersion` `1.2.1` and installs `ghcr.io/giovannirco/arith-rust:1.2.1`. `--set image.tag=<tag>` installs another build.
 
 ## Values
 
